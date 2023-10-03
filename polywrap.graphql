@@ -1,0 +1,546 @@
+"""Software development kit that facilitates the interaction with the Safe Transaction Service API."""
+type Module {
+  """
+  Returns the information and configuration of the service.
+  url: `/v1/about`
+
+  @returns The information and configuration of the service
+  """
+  getServiceInfo: SafeServiceInfoResponse! 
+
+  """
+  Returns the list of Safe master copies.
+  url: /v1/about/master-copies
+
+  @returns The list of Safe master copies
+  """
+  getServiceMasterCopiesInfo: [MasterCopyResponse!]! 
+
+  """
+  Decodes the specified Safe transaction data.
+  url: /v1/data-decoder/
+
+  @param data - The Safe transaction data
+  @returns The transaction data decoded
+  @throws "Invalid data"
+  @throws "Not Found"
+  @throws "Ensure this field has at least 1 hexadecimal chars (not counting 0x)."
+  """
+  decodeData(
+    data: String!
+  ): JSON!
+
+  """
+  Returns the list of Safes where the address provided is an owner.
+  url: `/v1/owners/{address}/safes/`
+
+  @param ownerAddress - The owner address
+  @returns The list of Safes where the address provided is an owner
+  @throws "Invalid owner address"
+  @throws "Checksum address validation failed"
+  """
+  getSafesByOwner(ownerAddress: String!): OwnerResponse!
+
+  """
+  Returns the list of Safes where the module address provided is enabled.
+  url: `/v1/modules/{address}/safes/`
+
+  @param moduleAddress - The Safe module address
+  @returns The list of Safe addresses where the module provided is enabled
+  @throws "Invalid module address"
+  @throws "Module address checksum not valid"
+  """
+  getSafesByModule(moduleAddress: String!): ModulesResponse!
+
+  """
+  Returns all the information of a Safe transaction.
+  url: `/v1/multisig-transactions/{safeTxHash}/`
+
+  @param safeTxHash - Hash of the Safe transaction
+  @returns The information of a Safe transaction
+  @throws "Invalid safeTxHash"
+  @throws "Not found."
+  """
+  getTransaction(safeTxHash: String!): SafeMultisigTransactionResponse!
+
+  """
+  Returns the list of confirmations for a given a Safe transaction.
+  url: `/v1/multisig-transactions/{safeTxHash}/confirmations/`
+  
+  @param safeTxHash - The hash of the Safe transaction
+  @returns The list of confirmations
+  @throws "Invalid safeTxHash"
+  """
+  getTransactionConfirmations(safeTxHash: String!): SafeMultisigConfirmationListResponse!
+
+  """
+  Adds a confirmation for a Safe transaction.
+  url: `/v1/multisig-transactions/{safeTxHash}/confirmations/`
+  
+  @param safeTxHash - Hash of the Safe transaction that will be confirmed
+  @param signature - Signature of the transaction
+  @returns
+  @throws "Invalid safeTxHash"
+  @throws "Invalid signature"
+  @throws "Malformed data"
+  @throws "Error processing data"
+  """
+  confirmTransaction(safeTxHash: String!, signature: String!): SignatureResponse!
+
+  """
+  Returns the information and configuration of the provided Safe address.
+  url: `/v1/safes/{safeAddress}/`
+  
+  @param safeAddress - The Safe address
+  @returns The information and configuration of the provided Safe address
+  @throws "Invalid Safe address"
+  @throws "Checksum address validation failed"
+  """
+  getSafeInfo(safeAddress: String!): SafeInfoResponse!
+
+  """
+  Returns the list of delegates.
+  url: `/v1/delegates`
+  
+  @param getSafeDelegateProps - Properties to filter the returned list of delegates
+  @returns The list of delegates
+  @throws "Checksum address validation failed"
+  """
+  getSafeDelegates(
+    safeAddress: String,
+    delegateAddress: String,
+    delegatorAddress: String,
+    label: String,
+    limit: String,
+    offset: String
+  ): SafeDelegateListResponse!
+
+  """
+  Adds a new delegate for a given Safe address.
+  url: `/v1/delegates/`
+  
+  @param addSafeDelegateProps - The configuration of the new delegate
+  @returns
+  @throws "Invalid Safe delegate address"
+  @throws "Invalid Safe delegator address"
+  @throws "Invalid label"
+  @throws "Checksum address validation failed"
+  @throws "Address <delegate_address> is not checksumed"
+  @throws "Safe=<safe_address> does not exist or it's still not indexed"
+  @throws "Signing owner is not an owner of the Safe"
+  """
+  addSafeDelegate(
+    safeAddress: String!,
+    delegateAddress: String!,
+    delegatorAddress: String!,
+    label: String!,
+  ): SafeDelegateResponse!
+
+  """
+  Removes a delegate for a given Safe address.
+  url: `/v1/delegates/{delegateAddress}`
+  
+  @param deleteSafeDelegateProps - The configuration for the delegate that will be removed
+  @returns
+  @throws "Invalid Safe delegate address"
+  @throws "Invalid Safe delegator address"
+  @throws "Checksum address validation failed"
+  @throws "Signing owner is not an owner of the Safe"
+  @throws "Not found"
+  """
+  removeSafeDelegate(
+    delegateAddress: String!,
+    delegatorAddress: String!
+  ): Boolean!
+
+  """
+  Returns the creation information of a Safe.
+  url: `/v1/safes/{safeAddress}/creation/`
+  
+  @param safeAddress - The Safe address
+  @returns The creation information of a Safe
+  @throws "Invalid Safe address"
+  @throws "Safe creation not found"
+  @throws "Checksum address validation failed"
+  @throws "Problem connecting to Ethereum network"
+  """
+  getSafeCreationInfo(safeAddress: String!): SafeCreationInfoResponse!
+
+  """
+  Estimates the safeTxGas for a given Safe multi-signature transaction.
+  url: `/v1/safes/{safeAddress}/multisig-transactions/estimations/`
+  
+  @param safeAddress - The Safe address
+  @param safeTransaction - The Safe transaction to estimate
+  @returns The safeTxGas for the given Safe transaction
+  @throws "Invalid Safe address"
+  @throws "Data not valid"
+  @throws "Safe not found"
+  @throws "Tx not valid"
+  """
+  estimateSafeTransaction(
+    safeAddress: String!,
+    safeTransaction: SafeMultisigTransactionEstimate!
+  ): SafeMultisigTransactionEstimateResponse!
+
+  """
+  Creates a new multi-signature transaction with its confirmations and stores it in the Safe Transaction Service.
+  url: `/v1/safes/{safeAddress}/multisig-transactions/`
+  
+  @param safeAddress - The Safe address
+  @param safeTransactionData - The Safe transaction data
+  @param safeTxHash - The hash of the Safe transaction
+  @param senderAddress - Address of the sender
+  @param senderSignature - The signature of the sender
+  @param origin - The origin of the transaction (e.g., a dapp name)
+  @returns The hash of the Safe transaction proposed
+  @throws "Invalid Safe address"
+  @throws "Invalid safeTxHash"
+  @throws "Invalid data"
+  @throws "Invalid ethereum address/User is not an owner/Invalid signature/Nonce already executed/Sender is not an owner"
+  """
+  proposeTransaction(
+    safeAddress: String!,
+    safeTransactionData: SafeTransactionData!,
+    safeTxHash: String!,
+    senderAddress: String!,
+    senderSignature: String!,
+    origin: String
+  ): Boolean!
+
+  """
+  Returns the history of incoming transactions of a Safe account.
+  url: `/v1/safes/{safeAddress}/incoming-transfers?executed=true`
+  
+  @param safeAddress - The Safe address
+  @returns The history of incoming transactions
+  @throws "Invalid Safe address"
+  @throws "Checksum address validation failed"
+  """
+  getIncomingTransactions(safeAddress: String!): TransferListResponse!
+
+  """
+  Returns the history of module transactions of a Safe account.
+  url: `/v1/safes/{safeAddress}/module-transactions/`
+  
+  @param safeAddress - The Safe address
+  @returns The history of module transactions
+  @throws "Invalid Safe address"
+  @throws "Invalid data"
+  @throws "Invalid ethereum address"
+  """
+  getModuleTransactions(safeAddress: String!): SafeModuleTransactionListResponse!
+
+  """
+  Returns the history of multi-signature transactions of a Safe account.
+  url: `/v1/safes/{safeAddress}/multisig-transactions/`
+  
+  @param safeAddress - The Safe address
+  @returns The history of multi-signature transactions
+  @throws "Invalid Safe address"
+  @throws "Checksum address validation failed"
+  """
+  getMultisigTransactions(safeAddress: String!): SafeMultisigTransactionListResponse!
+
+  """
+  Returns the list of multi-signature transactions that are waiting for the confirmation of the Safe owners.
+  url: `/v1/safes/{safeAddress}/multisig-transactions/?executed=false&nonce__gte={currentNonce}`
+  
+  @param safeAddress - The Safe address
+  @param currentNonce - Current nonce of the Safe
+  @returns The list of transactions waiting for the confirmation of the Safe owners
+  @throws "Invalid Safe address"
+  @throws "Invalid data"
+  @throws "Invalid ethereum address"
+  """
+  getPendingTransactions(
+    safeAddress: String!,
+    currentNonce: Int
+  ): SafeMultisigTransactionListResponse!
+
+  """
+  Returns a list of transactions for a Safe. The list has different structures depending on the transaction type.
+  url: `/v1/safes/{safeAddress}/all-transactions/?trusted={options.trusted}&queued={options.queued}&executed={options.executed}`
+  
+  @param safeAddress - The Safe address
+  @param options - Options to filter transactions (trusted, queued, executed)
+  @returns The list of transactions for the Safe
+  @throws "Invalid Safe address"
+  @throws "Checksum address validation failed"
+  """
+  getAllTransactions(
+    safeAddress: String!,
+    options: AllTransactionsOptions
+  ): AllTransactionsListResponse!
+
+  """
+  Returns the right nonce to propose a new transaction after the last pending transaction.
+  url: `/v1/safes/{safeAddress}/next-nonce/`
+  
+  @param safeAddress - The Safe address
+  @returns The right nonce to propose a new transaction after the last pending transaction
+  @throws "Invalid Safe address"
+  @throws "Invalid data"
+  @throws "Invalid ethereum address"
+  """
+  getNextNonce(safeAddress: String!): Int!
+
+  """
+  Returns the list of all the ERC20 tokens handled by the Safe.
+  url: `/v1/tokens/`
+  
+  @returns The list of all the ERC20 tokens
+  """
+  getTokenList: TokenInfoListResponse!
+
+  """
+  Returns the information of a given ERC20 token.
+  url: `/v1/tokens/{tokenAddress}/`
+  
+  @param tokenAddress - The token address
+  @returns The information of the given ERC20 token
+  @throws "Invalid token address"
+  @throws "Checksum address validation failed"
+  """
+  getToken(tokenAddress: String!): TokenInfoResponse!
+
+}
+
+type SafeServiceInfoResponse {
+  name: String!
+  version: String!
+  api_version: String!
+  secure: Boolean!
+  settings: SafeServiceSettings!
+}
+
+type SafeServiceSettings {
+  AWS_CONFIGURED: Boolean!
+  AWS_S3_CUSTOM_DOMAIN: String!
+  ETHEREUM_NODE_URL: String!
+  ETHEREUM_TRACING_NODE_URL: String!
+  ETH_INTERNAL_TXS_BLOCK_PROCESS_LIMIT: Int!
+  ETH_INTERNAL_NO_FILTER: Boolean!
+  ETH_REORG_BLOCKS: Int!
+  TOKENS_LOGO_BASE_URI: String!
+  TOKENS_LOGO_EXTENSION: String!
+}
+
+type MasterCopyResponse {
+  address: String!
+  version: String!
+  deployer: String!
+  deployedBlockNumber: Int!
+  lastIndexedBlockNumber: Int!
+}
+
+
+type SafeInfoResponse {
+  address: String!
+  nonce: Int!
+  threshold: Int!
+  owners: [String!]!
+  masterCopy: String!
+  modules: [String!]!
+  fallbackHandler: String!
+  guard: String!
+  version: String!
+}
+
+type ModulesResponse {
+  safes: [String!]!
+}
+
+type OwnerResponse {
+  safes: [String!]!
+}
+
+type SafeMultisigConfirmationResponse {
+  owner: String!
+  submissionDate: String!
+  transactionHash: String
+  confirmationType: String
+  signature: String!
+  signatureType: String
+}
+
+type SafeMultisigTransactionResponse {
+  safe: String!
+  to: String!
+  value: String!
+  data: String
+  operation: Int!
+  gasToken: String!
+  safeTxGas: Int!
+  baseGas: Int!
+  gasPrice: String!
+  refundReceiver: String
+  nonce: Int!
+  executionDate: String!
+  submissionDate: String!
+  modified: String!
+  blockNumber: Int
+  transactionHash: String!
+  safeTxHash: String!
+  executor: String
+  isExecuted: Boolean!
+  isSuccessful: Boolean
+  ethGasPrice: String
+  gasUsed: Int
+  fee: String
+  origin: String!
+  dataDecoded: String
+  confirmationsRequired: Int!
+  confirmations: [SafeMultisigConfirmationResponse]
+  trusted: Boolean!
+  signatures: String
+}
+
+type SafeMultisigConfirmationListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [SafeMultisigConfirmationResponse!]!
+}
+
+type SignatureResponse {
+  signature: String!
+}
+
+type SafeDelegateListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [SafeDelegate!]!
+}
+
+type SafeDelegate {
+  safe: String!
+  delegate: String!
+  delegator: String!
+  label: String!
+}
+
+type SafeDelegateResponse {
+  safe: String!
+  delegate: String!
+  delegator: String!
+  label: String!
+  signature: String!
+}
+
+type SafeCreationInfoResponse {
+  created: String!
+  creator: String!
+  transactionHash: String!
+  factoryAddress: String!
+  masterCopy: String!
+  setupData: String!
+  dataDecoded: String
+}
+
+type SafeMultisigTransactionEstimateResponse {
+  safeTxGas: String!
+}
+
+type SafeMultisigTransactionEstimate {
+  to: String!
+  value: String!
+  data: String
+  operation: Int!
+}
+
+type TransferResponse {
+  type: String
+  executionDate: String!
+  blockNumber: Int!
+  transactionHash: String!
+  to: String!
+  value: String!
+  tokenId: String!
+  tokenAddress: String
+  from: String!
+}
+
+type TransferListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [TransferResponse!]!
+}
+
+type SafeModuleTransaction {
+  created: String
+  executionDate: String!
+  blockNumber: Int
+  isSuccessful: Boolean
+  transactionHash: String
+  safe: String!
+  module: String!
+  to: String!
+  value: String!
+  data: String!
+  operation: Int!
+  dataDecoded: String
+}
+
+type SafeModuleTransactionListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [SafeModuleTransaction!]!
+}
+
+type SafeMultisigTransactionListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [SafeMultisigTransactionResponse!]!
+}
+
+type AllTransactionsOptions {
+  executed: Boolean
+  queued: Boolean
+  trusted: Boolean
+}
+
+type AllTransactionsListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [JSON!]!
+}
+
+type TokenInfoResponse {
+  type: String
+  address: String!
+  name: String!
+  symbol: String!
+  decimals: Int!
+  logoUri: String
+}
+
+type TokenInfoListResponse {
+  count: Int!
+  next: String
+  previous: String
+  results: [TokenInfoResponse!]!
+}
+
+type SafeTransactionData {
+  to: String!
+  value: String!
+  data: String!
+  operation: OperationType!
+  safeTxGas: String!
+  baseGas: String!
+  gasPrice: String!
+  gasToken: String!
+  refundReceiver: String!
+  nonce: Int!
+}
+
+enum OperationType {
+  Call, # 0
+  DelegateCall # 1
+}

@@ -1,0 +1,7 @@
+format: 0.4.0
+project:
+  name: safe-api-plugin
+  type: plugin/typescript
+source:
+  schema: ./polywrap.graphql
+  module: ./src/index.ts
