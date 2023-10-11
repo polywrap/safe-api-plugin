@@ -1,9 +1,9 @@
+import { EthersAdapter } from "@safe-global/protocol-kit";
 import { PolywrapClient } from "@polywrap/client-js";
 import { PolywrapClientConfigBuilder } from "@polywrap/client-config-builder-js";
 import { Safe } from "../types";
-import { safeApiPlugin } from "../..";
 import { ethers } from "ethers";
-import { EthersAdapter } from "@safe-global/protocol-kit";
+import { safeApiPlugin } from "../..";
 
 jest.setTimeout(500000);
 

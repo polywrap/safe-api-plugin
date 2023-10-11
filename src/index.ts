@@ -1,13 +1,12 @@
-import SafeApiKit from "@safe-global/api-kit";
-import { SafeApiKitConfig } from "@safe-global/api-kit";
-import { OperationType as CoreOperationType } from "@safe-global/safe-core-sdk-types";
-import { Signer } from "ethers";
-
-import { CoreClient, Module, manifest } from "./wrap";
-
 import * as Types from "./wrap";
 
+import { CoreClient, Module, manifest } from "./wrap";
 import { PluginFactory, PluginPackage } from "@polywrap/plugin-js";
+import { Signer, utils } from "ethers";
+
+import { OperationType as CoreOperationType } from "@safe-global/safe-core-sdk-types";
+import SafeApiKit from "@safe-global/api-kit";
+import { SafeApiKitConfig } from "@safe-global/api-kit";
 
 type SafeApiConfig = SafeApiKitConfig & {
   signer: Signer;
@@ -65,7 +64,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.OwnerResponse> {
-    return this.safe.getSafesByOwner(args.ownerAddress);
+    return this.safe.getSafesByOwner(utils.getAddress(args.ownerAddress));
   }
 
   async getSafesByModule(
@@ -73,7 +72,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.ModulesResponse> {
-    return this.safe.getSafesByModule(args.moduleAddress);
+    return this.safe.getSafesByModule(utils.getAddress(args.moduleAddress));
   }
 
   async getTransaction(
@@ -105,7 +104,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.SafeInfoResponse> {
-    return this.safe.getSafeInfo(args.safeAddress);
+    return this.safe.getSafeInfo(utils.getAddress(args.safeAddress));
   }
 
   async getSafeDelegates(
@@ -114,9 +113,15 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     env?: null
   ): Promise<Types.SafeDelegateListResponse> {
     return this.safe.getSafeDelegates({
-      safeAddress: args.safeAddress || undefined,
-      delegateAddress: args.delegateAddress || undefined,
-      delegatorAddress: args.delegatorAddress || undefined,
+      safeAddress: args.safeAddress
+        ? utils.getAddress(args.safeAddress)
+        : undefined,
+      delegateAddress: args.delegateAddress
+        ? utils.getAddress(args.delegateAddress)
+        : undefined,
+      delegatorAddress: args.delegatorAddress
+        ? utils.getAddress(args.delegatorAddress)
+        : undefined,
       label: args.label || undefined,
       offset: args.offset || undefined,
       limit: args.limit || undefined,
@@ -130,6 +135,9 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
   ): Promise<Types.SafeDelegateResponse> {
     return this.safe.addSafeDelegate({
       ...args,
+      safeAddress: utils.getAddress(args.safeAddress),
+      delegateAddress: utils.getAddress(args.delegateAddress),
+      delegatorAddress: utils.getAddress(args.delegatorAddress),
       signer: this.config.signer,
     });
   }
@@ -141,6 +149,8 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
   ): Promise<Types.Boolean> {
     await this.safe.removeSafeDelegate({
       ...args,
+      delegateAddress: utils.getAddress(args.delegateAddress),
+      delegatorAddress: utils.getAddress(args.delegatorAddress),
       signer: this.config.signer,
     });
     return true;
@@ -151,7 +161,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.SafeCreationInfoResponse> {
-    return this.safe.getSafeCreationInfo(args.safeAddress);
+    return this.safe.getSafeCreationInfo(utils.getAddress(args.safeAddress));
   }
 
   async estimateSafeTransaction(
@@ -159,10 +169,14 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.SafeMultisigTransactionEstimateResponse> {
-    return this.safe.estimateSafeTransaction(args.safeAddress, {
-      ...args.safeTransaction,
-      data: args.safeTransaction.data || undefined,
-    });
+    return this.safe.estimateSafeTransaction(
+      utils.getAddress(args.safeAddress),
+      {
+        ...args.safeTransaction,
+        to: utils.getAddress(args.safeTransaction.to),
+        data: args.safeTransaction.data || undefined,
+      }
+    );
   }
 
   async proposeTransaction(
@@ -172,8 +186,11 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
   ): Promise<Types.Boolean> {
     await this.safe.proposeTransaction({
       ...args,
+      safeAddress: utils.getAddress(args.safeAddress),
+      senderAddress: utils.getAddress(args.senderAddress),
       safeTransactionData: {
         ...args.safeTransactionData,
+        to: utils.getAddress(args.safeTransactionData.to),
         operation: toCoreOperationType(args.safeTransactionData.operation),
       },
       origin: args.origin || undefined,
@@ -186,7 +203,9 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.TransferListResponse> {
-    return this.safe.getIncomingTransactions(args.safeAddress);
+    return this.safe.getIncomingTransactions(
+      utils.getAddress(args.safeAddress)
+    );
   }
 
   async getModuleTransactions(
@@ -194,7 +213,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.SafeModuleTransactionListResponse> {
-    return this.safe.getModuleTransactions(args.safeAddress);
+    return this.safe.getModuleTransactions(utils.getAddress(args.safeAddress));
   }
 
   async getMultisigTransactions(
@@ -202,7 +221,9 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.SafeMultisigTransactionListResponse> {
-    return this.safe.getMultisigTransactions(args.safeAddress);
+    return this.safe.getMultisigTransactions(
+      utils.getAddress(args.safeAddress)
+    );
   }
 
   async getPendingTransactions(
@@ -211,7 +232,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     env?: null
   ): Promise<Types.SafeMultisigTransactionListResponse> {
     return this.safe.getPendingTransactions(
-      args.safeAddress,
+      utils.getAddress(args.safeAddress),
       args.currentNonce || undefined
     );
   }
@@ -221,17 +242,20 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.AllTransactionsListResponse> {
-    const result = await this.safe.getAllTransactions(args.safeAddress, {
-      executed: args.options?.executed || undefined,
-      queued: args.options?.queued || undefined,
-      trusted: args.options?.trusted || undefined,
-    });
+    const result = await this.safe.getAllTransactions(
+      utils.getAddress(args.safeAddress),
+      {
+        executed: args.options?.executed || undefined,
+        queued: args.options?.queued || undefined,
+        trusted: args.options?.trusted || undefined,
+      }
+    );
     return {
       count: result.count,
       next: result.next,
       previous: result.previous,
       results: result.results.map((res) => JSON.stringify(res)),
-    }
+    };
   }
 
   async getNextNonce(
@@ -239,7 +263,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.Int> {
-    return this.safe.getNextNonce(args.safeAddress);
+    return this.safe.getNextNonce(utils.getAddress(args.safeAddress));
   }
 
   async getTokenList(
@@ -255,7 +279,7 @@ export class SafeApiPlugin extends Module<SafeApiConfig> {
     client: CoreClient,
     env?: null
   ): Promise<Types.TokenInfoResponse> {
-    return this.safe.getToken(args.tokenAddress);
+    return this.safe.getToken(utils.getAddress(args.tokenAddress));
   }
 }
 
